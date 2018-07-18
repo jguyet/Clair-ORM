@@ -70,7 +70,8 @@ public class Clair {
 		return true;
 	}
 	
-	public Object buildDAO(Class<?> c) {
+	@SuppressWarnings("unchecked")
+	public <T> T buildDAO(Class<T> c) {
 		Annotation[] annots = c.getAnnotations();
 		Map<String, Class<?>> an = new HashMap<String, Class<?>>();
 		
@@ -94,7 +95,7 @@ public class Clair {
 			
 			constructor.setAccessible(true);
 			
-			return constructor.newInstance(this.dataSource);
+			return (T)constructor.newInstance(this.dataSource);
 			
 		} catch (Exception e) {
 			e.printStackTrace();

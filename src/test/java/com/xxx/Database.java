@@ -16,7 +16,7 @@ public class Database {
 	}
 	
 	public void initializeDAO() {
-		this.accountTable = (AccountDAO)this.clair.buildDAO(AccountDAO.class);
+		this.accountTable = this.clair.buildDAO(AccountDAO.class);
 	}
 
 	public AccountDAO getAccountTable() {
