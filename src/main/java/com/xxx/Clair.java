@@ -40,9 +40,9 @@ public class Clair {
 		config.addDataSourceProperty("password", passwordDB);
 		config.setAutoCommit(true);// AutoCommit, control les request
 		config.setConnectionTimeout(3000);//timeout
-		config.setMaximumPoolSize(1000);//nombre de request simultan�
+		config.setMaximumPoolSize(1000);//nombre de request simultane
 		config.setMinimumIdle(1);
-		config.setIdleTimeout(1000);//temp de request normal a �valu�
+		config.setIdleTimeout(1000);//temp de request normal a value
 		config.setConnectionTimeout(251);
 		//config.setMaxLifetime();//a voir si a utilise
 		this.hikariConfig = config;
