@@ -26,13 +26,13 @@ import ch.qos.logback.classic.Logger;
 
 public abstract class AbstractDAO<T> {
 
-	protected HikariDataSource	dataSource;
-	protected Logger			logger	= (Logger) LoggerFactory.getLogger("test");
-	protected final Object		locker	= new Object();
-	
+	private HikariDataSource				dataSource;
+	private Logger							logger	= (Logger) LoggerFactory.getLogger("test");
 	private String							tableName;
 	private Map<String, FieldInformation>	columns = new HashMap<String, FieldInformation>();
 	private Class<?>						sourceClass = null;
+	
+	private final Object					locker	= new Object();
 	
 	public AbstractDAO(HikariDataSource dataSource)
 	{
@@ -97,6 +97,10 @@ public abstract class AbstractDAO<T> {
 		this.columns.put(fieldInformation.name, fieldInformation);
 	}
 	
+	/**
+	 * Get all Object from table
+	 * @return
+	 */
 	public ArrayList<T> find() {
 		ArrayList<T> array = new ArrayList<T>();
 		Result result = null;
@@ -127,7 +131,32 @@ public abstract class AbstractDAO<T> {
 	}
 	
 	public ArrayList<T> find(String query) {
-		return null;
+		ArrayList<T> array = new ArrayList<T>();
+		Result result = null;
+		try
+		{
+			result = getData("SELECT * FROM " + tableName + " " + query);
+			ResultSet RS = result.resultSet;
+			while (RS.next())
+			{
+				T obj = this.newTInstance();
+				
+				for (Entry<String, FieldInformation> entry : this.columns.entrySet()) {
+					entry.getValue().field.setAccessible(true);
+					entry.getValue().field.set(obj, getValueFromResult(RS, entry.getKey(), entry.getValue()));
+				}
+				array.add(obj);
+			}
+		}
+		catch (Exception e)
+		{
+			this.sendError(this.tableName + " error find", e);
+		}
+		finally
+		{
+			close(result);
+		}
+		return array;
 	}
 	
 	/**
@@ -199,12 +228,56 @@ public abstract class AbstractDAO<T> {
 		return obj;
 	}
 	
+	/**
+	 * get global count
+	 * @return
+	 */
 	public long count() {
-		return 0L;
+		Result result = null;
+		int count = 0;
+		try
+		{
+			result = getDatanull("SELECT count(*) AS n FROM `" + this.tableName + "`");
+			ResultSet RS = result.resultSet;
+
+			boolean found = RS.first();
+
+			if (found)
+				count = RS.getInt("n");
+		}
+		catch (SQLException e)
+		{
+			return (0);
+		}
+		finally
+		{
+			close(result);
+		}
+		return count;
 	}
 	
 	public long count(String query) {
-		return 0L;
+		Result result = null;
+		int count = 0;
+		try
+		{
+			result = getDatanull("SELECT count(*) AS n FROM `" + this.tableName + "` " + query);
+			ResultSet RS = result.resultSet;
+
+			boolean found = RS.first();
+
+			if (found)
+				count = RS.getInt("n");
+		}
+		catch (SQLException e)
+		{
+			return (0);
+		}
+		finally
+		{
+			close(result);
+		}
+		return count;
 	}
 	
 	public void delete(T entity) {
@@ -457,7 +530,7 @@ public abstract class AbstractDAO<T> {
 		}
 	}
 	
-    protected PreparedStatement getPreparedStatement(String query) throws SQLException {//shaaf
+    protected PreparedStatement getPreparedStatement(String query) throws SQLException {
     	try {
 	       Connection connection = dataSource.getConnection();
 	       return connection.prepareStatement(query);
@@ -534,14 +607,13 @@ public abstract class AbstractDAO<T> {
 
 	protected void close(Result result)
 	{
-		if (result != null)
-		{
-			if (result.resultSet != null)
-				close(result.resultSet);
-			if (result.connection != null)
-				close(result.connection);
-			logger.trace("Connection {} has been released", result.connection);
-		}
+		if (result == null)
+			return ;
+		if (result.resultSet != null)
+			close(result.resultSet);
+		if (result.connection != null)
+			close(result.connection);
+		logger.trace("Connection {} has been released", result.connection);
 	}
 
 	protected void sendError(String msg, Exception e)
