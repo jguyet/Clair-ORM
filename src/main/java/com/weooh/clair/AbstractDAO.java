@@ -3,7 +3,6 @@ package com.weooh.clair;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,9 +16,11 @@ import java.util.Map.Entry;
 
 import org.slf4j.LoggerFactory;
 
+import com.weooh.clair.annotation.ClairIfNullGenerateValue;
 import com.weooh.clair.annotation.Column;
 import com.weooh.clair.annotation.Primary;
 import com.weooh.clair.annotation.Table;
+import com.weooh.clair.annotation.store.IFieldGenerateValue;
 import com.weooh.clair.validation.IFieldValidation;
 import com.weooh.clair.validation.Validator;
 import com.weooh.clair.validation.annotation.ClairValidation;
@@ -35,13 +36,14 @@ public abstract class AbstractDAO<T> {
 	private String							tableName;
 	private Map<String, FieldInformation>	fields = new HashMap<String, FieldInformation>();
 	private Map<String, FieldInformation>	validationsFields = new HashMap<String, FieldInformation>();
+	private Map<String, FieldInformation>	generationsFields = new HashMap<String, FieldInformation>();
 	private Class<?>						sourceClass = null;
 	
 	private final Object					locker	= new Object();
 	
-	public AbstractDAO(HikariDataSource dataSource)
+	public AbstractDAO(ClairDataSource dataSource)
 	{
-		this.dataSource = dataSource;
+		this.dataSource = dataSource.dataSource;
 		this.logger.setLevel(Level.ERROR);
 		if (sourceClass == null) {
 			buildReflection();
@@ -103,6 +105,11 @@ public abstract class AbstractDAO<T> {
 		//validations
 		if (annotationMap.containsKey(ClairValidation.class)) {
 			this.validationsFields.put(fieldInformation.name, fieldInformation);
+		}
+		
+		//generators
+		if (annotationMap.containsKey(ClairIfNullGenerateValue.class)) {
+			this.generationsFields.put(fieldInformation.name, fieldInformation);
 		}
 	}
 	
@@ -366,6 +373,12 @@ public abstract class AbstractDAO<T> {
 				}
 				columnsName += "`" + entry.getKey() + "`";
 			}
+			
+			//generation of fields
+			if (this.generationsFields.size() > 0) {
+				this.generateValueFromObject(entity);
+			}
+			
 			p = getPreparedStatement("REPLACE INTO `" + tableName + "` (" + columnsName + ") VALUES (" + numberOfValue + ")");
 			
 			int parameterIndex = 1;
@@ -496,6 +509,34 @@ public abstract class AbstractDAO<T> {
 			result += entry.getKey() + " = '" + entry.getValue().field.get(entity) + "'";
 		}
 		return result;
+	}
+	
+	private void generateValueFromObject(T entity) {
+		for (Entry<String, FieldInformation> entry : this.generationsFields.entrySet()) {
+			
+			Annotation[] annots = entry.getValue().field.getAnnotations();
+			Map<Class<?>, Annotation> annotationMap = new HashMap<Class<?>, Annotation>();
+			
+			for (Annotation a : annots) {
+				annotationMap.put(a.annotationType(), a);
+			}
+			
+			if (annotationMap.containsKey(ClairIfNullGenerateValue.class)) {
+				ClairIfNullGenerateValue a = (ClairIfNullGenerateValue)annotationMap.get(ClairIfNullGenerateValue.class);
+				
+				try {
+					Constructor<?> constructor = a.method().getConstructor();
+					
+					constructor.setAccessible(true);
+					IFieldGenerateValue validationClass = (IFieldGenerateValue)constructor.newInstance();
+					
+					entry.getValue().field.set(entity, validationClass.generateValue());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

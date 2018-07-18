@@ -18,6 +18,7 @@ import ch.qos.logback.classic.Logger;
 public class Clair {
 
 	private HikariDataSource		dataSource;
+	private ClairDataSource			clairDataSource;
 	private HikariConfig			hikariConfig;
 	
 	private static Logger			logger	= (Logger) LoggerFactory.getLogger(Clair.class);
@@ -60,6 +61,7 @@ public class Clair {
 			logger.setLevel(Level.OFF);
 			logger.trace("Reading database config");
 			this.dataSource = new HikariDataSource(this.hikariConfig);
+			this.clairDataSource = new ClairDataSource(this.dataSource);
 			if (!testConnection(dataSource))
 			{
 				logger.error("Pleaz check your username and password and database connection");
@@ -99,8 +101,7 @@ public class Clair {
 			Constructor<?> constructor = c.getDeclaredConstructor(HikariDataSource.class);
 			
 			constructor.setAccessible(true);
-			
-			return (T)constructor.newInstance(this.dataSource);
+			return (T)constructor.newInstance(this.clairDataSource);
 			
 		} catch (Exception e) {
 			e.printStackTrace();

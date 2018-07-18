@@ -4,5 +4,5 @@ import java.util.ArrayList;
 
 public interface IFieldValidation<T> {
 
-	public ArrayList<String> isValidField(T obj);
+	public ArrayList<String> isValidField(T field);
 }
