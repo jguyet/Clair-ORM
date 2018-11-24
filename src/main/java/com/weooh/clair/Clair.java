@@ -91,6 +91,7 @@ public class Clair {
 			return null;
 		}
 		for (Annotation a : annots) {
+			System.out.println(a.annotationType().getSimpleName());
 			an.put(a.annotationType().getSimpleName(), c);
 		}
 		if (!an.containsKey("ObjectDAO")) {
@@ -98,7 +99,7 @@ public class Clair {
 			return null;
 		}
 		try {
-			Constructor<?> constructor = c.getDeclaredConstructor(HikariDataSource.class);
+			Constructor<?> constructor = c.getDeclaredConstructor(ClairDataSource.class);
 			
 			constructor.setAccessible(true);
 			return (T)constructor.newInstance(this.clairDataSource);

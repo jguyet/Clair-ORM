@@ -357,6 +357,8 @@ public abstract class AbstractDAO<T> {
 	 * @return
 	 */
 	public boolean save(T entity) {
+		boolean exists = exists(entity);
+		
 		PreparedStatement p = null;
 		try
 		{
@@ -379,7 +381,19 @@ public abstract class AbstractDAO<T> {
 				this.generateValueFromObject(entity);
 			}
 			
-			p = getPreparedStatement("REPLACE INTO `" + tableName + "` (" + columnsName + ") VALUES (" + numberOfValue + ")");
+			//create query :
+			StringBuilder b = new StringBuilder();
+			
+			if (exists) {
+				b.append("REPLACE INTO");
+			} else {
+				b.append("INSERT INTO");
+			}
+			b.append(" `").append(tableName).append("` ");
+			b.append("(").append(columnsName).append(")").append(" VALUES ");
+			b.append("(").append(numberOfValue).append(")");
+			
+			p = getPreparedStatement(b.toString());
 			
 			int parameterIndex = 1;
 			for (FieldInformation field : this.fields.values()) {
@@ -387,6 +401,20 @@ public abstract class AbstractDAO<T> {
 			}
 			
 			execute(p);
+			
+			if (!exists) {//update auto increment
+				ResultSet result = p.getGeneratedKeys();
+				int index = 1;
+				for (Entry<String, FieldInformation> entry : this.fields.entrySet()) {
+					if (!entry.getValue().isPrimary || !entry.getValue().autoIncrement) {
+						continue ;
+					}
+					if (result.next()) {
+						Object value = result.getObject(index++);
+						entry.getValue().field.set(entity, value);
+					}
+				}
+			}
 		}
 		catch (Exception e)
 		{
@@ -397,6 +425,7 @@ public abstract class AbstractDAO<T> {
 		{
 			close(p);
 		}
+		
 		return true;
 	}
 	
@@ -410,7 +439,7 @@ public abstract class AbstractDAO<T> {
 		Result result = null;
 		try
 		{
-			String where_primary = generateWherePrimary(entity); 
+			String where_primary = generateWherePrimary(entity);
 			result = getData("SELECT * FROM `" + tableName + "` WHERE " + where_primary);
 			ResultSet RS = result.resultSet;
 			if (RS.next()) {
@@ -782,7 +811,7 @@ public abstract class AbstractDAO<T> {
     protected PreparedStatement getPreparedStatement(String query) throws SQLException {
     	try {
 	       Connection connection = dataSource.getConnection();
-	       return connection.prepareStatement(query);
+	       return connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
     	}catch(SQLException e)
     	{
     		logger.error("Erreur SQL : " + query, e);
