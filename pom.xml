@@ -31,7 +31,7 @@
 	<dependency>
 	    <groupId>ch.qos.logback</groupId>
 	    <artifactId>logback-classic</artifactId>
-	    <version>1.1.7</version>
+	    <version>1.2.3</version>
 	</dependency>
 	<dependency>
 	    <groupId>ch.qos.logback</groupId>
@@ -44,12 +44,12 @@
 	<dependency> <!-- used for mysql connection -->
 	    <groupId>org.mariadb.jdbc</groupId>
 	    <artifactId>mariadb-java-client</artifactId>
-	    <version>2.2.1</version>
+	    <version>2.4.1</version>
 	</dependency>
 	<dependency> <!-- Hikaricp library for speed mysql request -->
 	    <groupId>com.zaxxer</groupId>
 	    <artifactId>HikariCP</artifactId>
-	    <version>2.7.4</version>
+	    <version>3.3.1</version>
     	<scope>compile</scope>
 	</dependency>
 	<!-- ################################ -->
@@ -57,12 +57,12 @@
 	<dependency>
 	    <groupId>org.hibernate</groupId>
 	    <artifactId>hibernate-validator</artifactId>
-	    <version>5.3.5.Final</version>
+	    <version>6.0.16.Final</version>
 	</dependency>
 	<dependency>
 	    <groupId>javax.validation</groupId>
 	    <artifactId>validation-api</artifactId>
-	    <version>1.1.0.Final</version>
+	    <version>2.0.1.Final</version>
 	</dependency>
 	<!-- ################################ -->
 	<!-- Force version of JUnit because of issue with parent dependencies -->
@@ -72,7 +72,13 @@
 		<version>${junit.version}</version>
 		<scope>test</scope>
 	</dependency>
-	
+	  <dependency>
+		  <groupId>org.jetbrains</groupId>
+		  <artifactId>annotations</artifactId>
+		  <version>RELEASE</version>
+		  <scope>compile</scope>
+	  </dependency>
+
   </dependencies>
   <!-- END LIBRARIES DEPENDENCIES -->
   <!-- ########################################################################## -->

@@ -46,7 +46,7 @@ public class Clair {
 		config.addDataSourceProperty("password", passwordDB);
 		config.setAutoCommit(true);// AutoCommit, control les request
 		config.setConnectionTimeout(3000);//timeout
-		config.setMaximumPoolSize(1000);//nombre de request simultane
+		config.setMaximumPoolSize(1000);//nombre de pool de thread
 		config.setMinimumIdle(1);
 		config.setIdleTimeout(1000);//temp de request normal a value
 		config.setConnectionTimeout(251);

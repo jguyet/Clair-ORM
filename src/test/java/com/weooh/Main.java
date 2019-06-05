@@ -25,20 +25,7 @@ public class Main {
 		
 		ArrayList<String> errors = data.getAccountTable().save(test, false);
 		System.out.println(errors.toString());
-		
-		if (data.getAccountTable().exists(test)) {
-			System.out.println("T exists1");
-		} else {
-			System.out.println("T doesn't exists1");
-		}
-		
-		data.getAccountTable().delete(test);
-		
-		if (data.getAccountTable().exists(test)) {
-			System.out.println("T exists");
-		} else {
-			System.out.println("T doesn't exists");
-		}
 	}
-	
+
+
 }

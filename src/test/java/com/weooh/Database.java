@@ -13,7 +13,7 @@ public class Database {
 	}
 	
 	public void initializeConnection() {
-		this.clair.buildCredentials("localhost", 3306, "test", "root", "");
+		this.clair.buildCredentials("localhost", 3306, "test", "jguyet", "xxx");
 		this.clair.initializeConnection();
 	}
 	

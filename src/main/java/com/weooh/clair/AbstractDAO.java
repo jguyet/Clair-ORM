@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 
+import static java.util.stream.Collectors.toMap;
+
 public abstract class AbstractDAO<T> {
 
 	private HikariDataSource				dataSource;
@@ -41,11 +44,11 @@ public abstract class AbstractDAO<T> {
 	
 	private final Object					locker	= new Object();
 	
-	public AbstractDAO(ClairDataSource dataSource)
+	public AbstractDAO(@org.jetbrains.annotations.NotNull ClairDataSource dataSource) throws SQLException
 	{
 		this.dataSource = dataSource.dataSource;
 		this.logger.setLevel(Level.ERROR);
-		if (sourceClass == null) {
+		if (this.sourceClass == null) {
 			buildReflection();
 		}
 	}
@@ -55,43 +58,34 @@ public abstract class AbstractDAO<T> {
 		return (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
 	
-	private void buildReflection() {
+	private void buildReflection() throws SQLException {
 		Class<?> c = classForT();
 		
 		if (c == null)
 			return ;
 		Annotation[] annots = c.getAnnotations();
-		
+
 		if (annots.length < 0)
 			return ;
 		this.sourceClass = c;
-		for (Annotation a : annots) {
-			if (!(a instanceof Table))
-				continue ;
-			
-			Field[] fields = c.getDeclaredFields();
-			
-			for (int i = 0; i < fields.length; i++) {
-				this.addField(fields[i]);
-			}
-			this.tableName = ((Table)a).value();
-			break ;
-		}
+		this.tableName = Stream.of(c.getAnnotations())
+				.filter((a) -> (a instanceof Table))
+				.findFirst()
+				.map((a) -> {
+					Stream.of(c.getDeclaredFields()).forEach(this::addField);
+					return ((Table)a).value();
+				}).orElseThrow(() -> new SQLException("No annotation Table !"));
 	}
 	
 	private void addField(Field field) {
-		Annotation[] annots = field.getAnnotations();
-		Map<Class<?>, Annotation> annotationMap = new HashMap<Class<?>, Annotation>();
+		Map<Class<?>, Annotation> annotationMap = Stream.of(field.getAnnotations())
+				.collect(toMap(Annotation::annotationType, x -> x));
 		FieldInformation fieldInformation = new FieldInformation();
-		
-		for (Annotation a : annots) {
-			annotationMap.put(a.annotationType(), a);
-		}
-		
+
 		if (!annotationMap.containsKey(Column.class)) {
 			return ;
 		}
-		
+
 		field.setAccessible(true);
 		fieldInformation.field = field;
 		fieldInformation.name = ((Column)annotationMap.get(Column.class)).value();
@@ -249,27 +243,7 @@ public abstract class AbstractDAO<T> {
 	 * @return
 	 */
 	public long count() {
-		Result result = null;
-		int count = 0;
-		try
-		{
-			result = getDatanull("SELECT count(*) AS n FROM `" + this.tableName + "`");
-			ResultSet RS = result.resultSet;
-
-			boolean found = RS.first();
-
-			if (found)
-				count = RS.getInt("n");
-		}
-		catch (SQLException e)
-		{
-			return (0);
-		}
-		finally
-		{
-			close(result);
-		}
-		return count;
+		return count(null);
 	}
 	
 	public long count(String query) {
@@ -277,7 +251,7 @@ public abstract class AbstractDAO<T> {
 		int count = 0;
 		try
 		{
-			result = getDatanull("SELECT count(*) AS n FROM `" + this.tableName + "` " + query);
+			result = getDatanull("SELECT count(*) AS n FROM `" + this.tableName + "`" + (query != null ? " " + query : ""));
 			ResultSet RS = result.resultSet;
 
 			boolean found = RS.first();
