@@ -4,9 +4,9 @@
   <!-- ########################################################################## -->
   <!-- MAVEN PROJECT HDR -->
  	<modelVersion>4.0.0</modelVersion>
-  	<groupId>com.weooh</groupId>
+  	<groupId>com.weoohh</groupId>
   	<artifactId>Clair-ORM</artifactId>
-  	<version>0.0.1-SNAPSHOT</version>
+  	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
   <!-- ########################################################################## -->
   <!-- UTF-8 CONVERTION -->
